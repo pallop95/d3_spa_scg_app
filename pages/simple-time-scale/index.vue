@@ -2,13 +2,15 @@
   <div class="container">
     <h1>Circle Pack Diagram</h1>
     <DiagramSelect v-model="selected" v-bind="{ select }">
-      Year:
+      Mesurement:
     </DiagramSelect>
     <SimpleCirclePack v-bind="{ data: hierarchy, width, height }" />
   </div>
 </template>
 
 <script>
+import axios from "axios";
+import * as SensorData from "~/utilities/sensor_data";
 import { hierarchy, pack } from "d3-hierarchy";
 // import SimpleCirclePack from '../components/SimpleCirclePack'
 // import DiagramSelect from '../components/DiagramSelect'
@@ -22,79 +24,64 @@ export default {
     return {
       data: [],
       select: [
-        // {
-        //   label: "2001",
-        //   value: "2001",
-        // },
-        // {
-        //   label: "2002",
-        //   value: "2002",
-        // },
-        // {
-        //   label: "2003",
-        //   value: "2003",
-        // },
         {
-          label: "count",
-          value: "count",
+          label: "Humidity",
+          value: "humidity",
+        },
+        {
+          label: "Temperature",
+          value: "temperature",
         },
       ],
-      selected: "count",
-      items: [
-        { name: "84%", count: 8 },
-        { name: '87%', count: 6 },
-        { name: '86%', count: 4 },
-        { name: '73%', count: 1 },
-        { name: '74%', count: 1 },
-        { name: '62%', count: 2 },
-        { name: '90%', count: 1 },
-        { name: '66%', count: 1 },
-        { name: '61%', count: 1 },
-        { name: '58%', count: 1 },
-      ],
-      /*items: [
-        {
-          name: "Item 1",
-          2001: 5,
-          2002: 15,
-          2003: 10,
-        },
-        {
-          name: "Item 2",
-          2001: 6,
-          2002: 26,
-          2003: 30,
-        },
-        {
-          name: "Item 3",
-          2001: 7,
-          2002: 17,
-          2003: 25,
-        },
-        {
-          name: "Item 4",
-          2001: 8,
-          2002: 10,
-          2003: 19,
-        },
-        {
-          name: "Item 5",
-          2001: 9,
-          2002: 25,
-          2003: 5,
-        },
-        {
-          name: "Item 6",
-          2001: 10,
-          2002: 15,
-          2003: 30,
-        },
-      ],*/
+      selected: "humidity",
+      items: [],
       height: 500,
       width: 600,
       radius: 300,
     };
   },
+  methods: {
+    async setData(selected) {
+      try {
+        let response = await axios.get(
+          "http://trinity-es-backend-dev-alb-1321395360.ap-southeast-1.elb.amazonaws.com/RawSensorData/userId/6"
+        );
+        // console.log(response.data)
+
+        this.data = SensorData.getCountCircleIndicator(
+          response.data,
+          selected,
+          "Temperature And Humidity Sensor(THZ2ZT)"
+        );
+        console.log(this.data);
+
+        this.items = this.data;
+
+      } catch (err) {
+        console.log(err);
+      }
+    },
+  },
+  watch: {
+    selected() {
+      this.setData(this.selected);
+    }
+  },
+  async mounted() {
+    await this.setData(this.selected);
+  },
+  // async created() {
+  //   let response = await axios.get(
+  //     "http://trinity-es-backend-dev-alb-1321395360.ap-southeast-1.elb.amazonaws.com/RawSensorData/userId/6"
+  //   );
+  //   // console.log(response.data)
+
+  //   this.items = SensorData.getCountIndicator(
+  //     response.data,
+  //     this.selected,
+  //     "Temperature And Humidity Sensor(THZ2ZT)"
+  //   );
+  // },
   computed: {
     nestedData() {
       return {
@@ -113,7 +100,7 @@ export default {
     hierarchy() {
       const h = hierarchy(this.nestedData)
         // build sum with dropdown selected value
-        .sum((v) => v[this.selected]);
+        .sum((v) => v["count"]);
       console.log(h);
       this.packLayout(h);
       return h;

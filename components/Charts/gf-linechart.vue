@@ -240,4 +240,9 @@ export default {
   fill: none;
   pointer-events: all;
 }
+
+.gf-linechart {
+  display: block;
+  margin: 0 auto;
+}
 </style>
